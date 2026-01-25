@@ -35,6 +35,11 @@ button,
 }
 
 
+html,
+body {
+  width: 100%;
+  overflow-x: hidden;
+}
 
 html {
   scroll-behavior: smooth;
@@ -59,6 +64,14 @@ a {
   margin: 0 auto;
   padding: 32px 16px 64px;
 }
+
+@media (max-width: 768px) {
+  .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
 
 .nav {
   position: sticky;
@@ -88,9 +101,79 @@ a {
 }
 
 .nav__right {
+  white-space: nowrap;
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+/* Mobile menu button (hidden on desktop) */
+.menu-btn {
+  display: none;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: transparent;
+  border-radius: 12px;
+  padding: 8px 10px;
+  line-height: 1;
+}
+
+/* Mobile menu container */
+.nav__mobile {
+  display: none;
+}
+
+/* ===== Mobile rules ===== */
+@media (max-width: 768px) {
+  .nav__links {
+    display: none !important;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nav__mobile {
+    display: grid;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    background: inherit;
+  }
+
+  /* 默认收起，用 max-height 做个简单动画 */
+  .nav__mobile {
+    max-height: 0;
+    overflow: hidden;
+    padding-top: 0;
+    padding-bottom: 0;
+    transition: max-height 180ms ease, padding 180ms ease;
+  }
+
+  .nav__mobile.is-open {
+    max-height: 320px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .nav__mobileLink {
+    text-decoration: none;
+    color: inherit;
+    padding: 10px 12px;
+    border-radius: 12px;
+  }
+
+  .nav__mobileLink.is-active {
+    font-weight: 600;
+  }
+}
+
+/* ===== Dark theme (if you use .dark on html/body) ===== */
+.dark .menu-btn {
+  border-color: rgba(255, 255, 255, 0.16);
 }
 
 .theme-btn {
@@ -383,6 +466,13 @@ section#projects {
   /* 防止背景溢出造成边缘 */
 }
 
+@media (max-width: 900px) {
+  .hero::before {
+    display: none;
+  }
+}
+
+
 .hero::before {
   content: "";
   position: absolute;
@@ -456,7 +546,7 @@ section#projects {
 
 .hero__image {
   width: 340px;
-  max-width: 40vw;
+  max-width: min(340px, 100%);
   aspect-ratio: 4 / 5;
   object-fit: cover;
   border-radius: 24px 24px 20px 20px;
