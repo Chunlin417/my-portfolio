@@ -37,8 +37,15 @@ button,
 
 html,
 body {
-  width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+@supports not (overflow: clip) {
+
+  html,
+  body {
+    overflow-x: hidden;
+  }
 }
 
 html {
