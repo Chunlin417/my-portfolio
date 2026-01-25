@@ -4,9 +4,9 @@ import { useMemo, useEffect, useState } from "react";
 
 const TOP_TAGS = [
   "React",
-  "Vue",
+  "TypeScript",
   "JavaScript",
-  "Java",
+  "Vue",
   "PHP",
 ];
 
