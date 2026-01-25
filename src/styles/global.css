@@ -379,7 +379,13 @@ a {
 }
 
 .project-search {
-  width: min(560px, 100%);
+  width: 100%;
+  max-width: 560px;
+  /* 桌面端别太长 */
+  box-sizing: border-box;
+  /* 防止 padding/border 撑出容器 */
+  display: block;
+
   height: 44px;
   padding: 0 14px;
   border-radius: 12px;
@@ -395,9 +401,10 @@ a {
 }
 
 .project-search:focus {
-  border-color: rgba(99, 102, 241, 0.45);
-  /* indigo-ish */
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+  border-color: rgba(99, 102, 241, 0.55);
+  outline: 3px solid rgba(99, 102, 241, 0.18);
+  outline-offset: 0;
+  /* 不往外扩 */
 }
 
 .projects-hint {
@@ -407,6 +414,7 @@ a {
 }
 
 .section {
+
   scroll-margin-top: 90px;
   /* 跟你的 navbar 高度接近即可 */
 }
@@ -655,10 +663,11 @@ section#projects {
 }
 
 .modal {
-  width: min(900px, 92vw);
+  width: 100%;
+  max-width: 900px;
   max-height: 85vh;
   overflow: auto;
-
+  box-sizing: border-box;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 18px;
@@ -666,6 +675,7 @@ section#projects {
 
   position: relative;
   padding: 18px 18px 16px;
+  animation: modalPopIn 180ms cubic-bezier(0.2, 0.9, 0.2, 1);
 }
 
 .modal-close {
@@ -725,10 +735,6 @@ section#projects {
   animation: modalFadeIn 160ms ease-out;
 }
 
-.modal {
-  animation: modalPopIn 180ms cubic-bezier(0.2, 0.9, 0.2, 1);
-}
-
 @keyframes modalFadeIn {
   from {
     opacity: 0;
@@ -756,6 +762,19 @@ section#projects {
   .modal-overlay,
   .modal {
     animation: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .modal-overlay {
+    padding: 14px;
+    /* 手机端别留太大边距 */
+  }
+
+  .modal {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 16px;
   }
 }
 
