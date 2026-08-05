@@ -12,6 +12,20 @@ dist
 dist-ssr
 *.local
 
+# Next.js
+.next
+out
+next-env.d.ts
+*.tsbuildinfo
+
+# Old Vite implementation, kept temporarily during migration review.
+# Safe to delete entirely once `npm run build` succeeds on migrate/nextjs.
+legacy-vite
+
+# Env files
+.env
+.env*.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
