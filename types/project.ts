@@ -6,6 +6,7 @@ export interface Project {
   tech: string[];
   featured?: boolean;
   role?: string;
+  period?: string;
   stack?: string[];
   highlights?: string[];
   challenges?: string[];

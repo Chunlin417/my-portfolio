@@ -1,48 +1,57 @@
 import type { Metadata } from "next";
+import { Fraunces, Inter } from "next/font/google";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import CommandPalette from "@/components/ui/CommandPalette";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://your-domain.com";
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-display",
+  axes: ["opsz", "SOFT", "WONK"],
+  display: "swap",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(SITE_URL),
+  alternates: {
+    canonical: "/",
+  },
   title: {
-    default: "Chunlin He | Frontend Software Developer",
+    default: "Chunlin He | Full-Stack Developer",
     template: "%s | Chunlin He",
   },
   description:
-    "Frontend-focused software developer experienced in building production-ready web interfaces, enterprise UI systems, and maintainable frontend architecture.",
-  keywords: ["Chunlin He", "Frontend Developer", "React", "TypeScript", "Software Developer"],
+    "Full-stack developer experienced in building production-ready platforms end to end — Next.js and React frontends backed by Supabase, PostgreSQL, and RESTful APIs.",
+  keywords: [
+    "Chunlin He",
+    "Full-Stack Developer",
+    "Next.js",
+    "React",
+    "TypeScript",
+    "Supabase",
+    "Software Developer",
+  ],
   authors: [{ name: "Chunlin He" }],
   creator: "Chunlin He",
   openGraph: {
-    title: "Chunlin He | Frontend Software Developer",
+    title: "Chunlin He | Full-Stack Developer",
     description:
-      "Frontend-focused software developer building production-ready web interfaces and enterprise UI systems.",
+      "Full-stack developer building production-ready platforms end to end — Next.js and React frontends backed by Supabase, PostgreSQL, and RESTful APIs.",
     type: "website",
-    images: [
-      {
-        url: "/og-image.jpg",
-        width: 1200,
-        height: 630,
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Chunlin He | Frontend Software Developer",
+    title: "Chunlin He | Full-Stack Developer",
     description:
-      "Frontend-focused software developer building production-ready web interfaces and enterprise UI systems.",
-    images: ["/og-image.jpg"],
-  },
-  icons: {
-    icon: [
-      { url: "/favicon.ico" },
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-    ],
-    apple: [{ url: "/apple-touch-icon.png" }],
+      "Full-stack developer building production-ready platforms end to end — Next.js and React frontends backed by Supabase, PostgreSQL, and RESTful APIs.",
   },
   manifest: "/site.webmanifest",
   robots: {
@@ -74,7 +83,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      data-scroll-behavior="smooth"
+      className={`${fraunces.variable} ${inter.variable}`}
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
@@ -82,6 +96,7 @@ export default function RootLayout({
         <Navbar />
         <main className="container">{children}</main>
         <Footer />
+        <CommandPalette />
       </body>
     </html>
   );

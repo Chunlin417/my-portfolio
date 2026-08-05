@@ -1,20 +1,118 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { projects } from "@/data/projects";
 import { TOP_TECH_TAGS } from "@/lib/constants";
 import ProjectCard from "@/components/ui/ProjectCard";
 import type { Project } from "@/types/project";
 
+interface UrlState {
+  tech: string[];
+  project: number | null;
+}
+
+function readUrlState(): UrlState {
+  const params = new URLSearchParams(window.location.search);
+  const tech = params.get("tech");
+  const project = Number(params.get("project"));
+
+  return {
+    tech: tech ? tech.split(",").filter(Boolean) : [],
+    project: Number.isInteger(project) && project > 0 ? project : null,
+  };
+}
+
 export default function Projects() {
   const [query, setQuery] = useState("");
-  const [selectedTech, setSelectedTech] = useState<string[]>([]);
   const [showMore, setShowMore] = useState(false);
   const [showAllFilters, setShowAllFilters] = useState(false);
 
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const openProject = (project: Project) => setSelectedProject(project);
-  const closeProject = () => setSelectedProject(null);
+  /*
+   * Tech filters and the open entry live in the URL so a filtered view or a
+   * specific role can be linked to directly (?tech=Next.js&project=1).
+   *
+   * This deliberately uses the History API rather than next/navigation's
+   * useSearchParams: that hook opts the whole page out of static rendering
+   * unless it sits behind a Suspense boundary, which would keep the experience
+   * content out of the server-rendered HTML — a bad trade on a page whose job
+   * is to be read by recruiters and crawlers.
+   */
+  const [urlState, setUrlState] = useState<UrlState>({ tech: [], project: null });
+  const selectedTech = urlState.tech;
+
+  /*
+   * Mirrors urlState so writeUrlState can read the latest value without taking
+   * it as a dependency. The history write must NOT live inside a setState
+   * updater — React runs those during render, and mutating history there makes
+   * Next's Router update mid-render ("Cannot update a component while rendering
+   * a different component").
+   */
+  const urlStateRef = useRef(urlState);
+
+  useEffect(() => {
+    const sync = () => {
+      const next = readUrlState();
+      urlStateRef.current = next;
+      setUrlState(next);
+    };
+
+    sync();
+    window.addEventListener("popstate", sync);
+    return () => window.removeEventListener("popstate", sync);
+  }, []);
+
+  const writeUrlState = useCallback((next: Partial<UrlState>) => {
+    const prev = urlStateRef.current;
+    const merged: UrlState = {
+      tech: next.tech ?? prev.tech,
+      project: next.project !== undefined ? next.project : prev.project,
+    };
+
+    const params = new URLSearchParams(window.location.search);
+
+    if (merged.tech.length) params.set("tech", merged.tech.join(","));
+    else params.delete("tech");
+
+    if (merged.project) params.set("project", String(merged.project));
+    else params.delete("project");
+
+    const qs = params.toString();
+    window.history.replaceState(
+      null,
+      "",
+      qs ? `${window.location.pathname}?${qs}` : window.location.pathname
+    );
+
+    urlStateRef.current = merged;
+    setUrlState(merged);
+  }, []);
+
+  const selectedProject = useMemo(
+    () => projects.find((p) => p.id === urlState.project) ?? null,
+    [urlState.project]
+  );
+
+  const openProject = useCallback(
+    (project: Project) => writeUrlState({ project: project.id }),
+    [writeUrlState]
+  );
+
+  const closeProject = useCallback(
+    () => writeUrlState({ project: null }),
+    [writeUrlState]
+  );
+
+  // The ⌘K palette asks for an entry by id rather than reaching into this
+  // component's state.
+  useEffect(() => {
+    const onOpenRequest = (event: Event) => {
+      const id = (event as CustomEvent<{ id: number }>).detail?.id;
+      if (id) writeUrlState({ project: id });
+    };
+
+    window.addEventListener("experience:open", onOpenRequest);
+    return () => window.removeEventListener("experience:open", onOpenRequest);
+  }, [writeUrlState]);
 
   const allTags = useMemo(() => {
     const set = new Set(projects.flatMap((p) => p.tech || []));
@@ -34,32 +132,69 @@ export default function Projects() {
   }, [allTags, topTags]);
 
   const toggleTech = (tag: string) => {
-    setSelectedTech((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
+    writeUrlState({
+      tech: selectedTech.includes(tag)
+        ? selectedTech.filter((t) => t !== tag)
+        : [...selectedTech, tag],
+    });
   };
 
   const clearFilters = () => {
-    setSelectedTech([]);
+    writeUrlState({ tech: [] });
     setQuery("");
   };
 
-  // Escape closes the modal + locks background scroll while it's open
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  /*
+   * Dialog behaviour: lock background scroll, close on Escape, move focus into
+   * the dialog, keep Tab inside it, and hand focus back to whatever opened it.
+   * Without the trap, tabbing out of the modal lands on the page behind it,
+   * which keyboard and screen-reader users have no way to recover from.
+   */
   useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeProject();
+    if (!selectedProject) return;
+
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+
+    const focusableSelector =
+      'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeProject();
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const focusable = modalRef.current?.querySelectorAll<HTMLElement>(focusableSelector);
+      if (!focusable?.length) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+
+      if (event.shiftKey && (active === first || !modalRef.current?.contains(active))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
 
-    if (selectedProject) {
-      document.body.classList.add("modal-open");
-      window.addEventListener("keydown", onKeyDown);
-    }
+    document.body.classList.add("modal-open");
+    window.addEventListener("keydown", onKeyDown);
+
+    modalRef.current?.querySelector<HTMLElement>(focusableSelector)?.focus();
 
     return () => {
       document.body.classList.remove("modal-open");
       window.removeEventListener("keydown", onKeyDown);
+      previouslyFocused?.focus?.();
     };
-  }, [selectedProject]);
+  }, [selectedProject, closeProject]);
 
   const filteredProjects = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -86,35 +221,39 @@ export default function Projects() {
     ? filteredProjects.filter((p) => p.id !== featuredProject.id)
     : filteredProjects;
 
-  // 2 shown by default, up to 4 more revealed via "More Projects"
+  // 2 shown by default, the rest revealed via "Earlier Experience"
   const displayProjects = isFiltering ? filteredProjects : nonFeatured.slice(0, 2);
   const moreProjects = isFiltering ? [] : nonFeatured.slice(2, 6);
 
-  useEffect(() => {
-    if (isFiltering) setShowMore(false);
-  }, [isFiltering]);
+  // Derived rather than reset through an effect: while a filter is active the
+  // disclosure is irrelevant, and clearing the filter should restore whatever
+  // the visitor had expanded.
+  const isEarlierExpanded = showMore && !isFiltering;
 
   useEffect(() => {
-    if (showMore) {
-      requestAnimationFrame(() => {
-        const el = document.querySelector(".more-grid");
-        if (!el) return;
+    if (!isEarlierExpanded) return;
 
-        const y = el.getBoundingClientRect().top + window.pageYOffset - 200;
-        window.scrollTo({ top: y, behavior: "smooth" });
-      });
-    }
-  }, [showMore]);
+    const frame = requestAnimationFrame(() => {
+      const el = document.querySelector(".more-grid");
+      if (!el) return;
+
+      const y = el.getBoundingClientRect().top + window.scrollY - 200;
+      window.scrollTo({ top: y, behavior: "smooth" });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [isEarlierExpanded]);
 
   return (
     <section id="projects" className="section">
-      <h2 className="h2">Projects</h2>
+      <span className="section-kicker">01 — Experience</span>
+      <h2 className="h2">Experience</h2>
 
       <div className="projects-toolbar">
         <input
           type="text"
           className="project-search"
-          placeholder="Search projects by name or tech..."
+          placeholder="Search experience by company or tech..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -200,33 +339,33 @@ export default function Projects() {
         ))}
 
         {!isFiltering && moreProjects.length > 0 && (
-          <div
-            className={`card card--more card--clickable ${showMore ? "is-open" : ""}`}
-            role="button"
-            tabIndex={0}
+          <button
+            type="button"
+            className={`card card--more card--clickable ${isEarlierExpanded ? "is-open" : ""}`}
             onClick={() => setShowMore((v) => !v)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setShowMore((v) => !v);
-              }
-            }}
-            aria-label={showMore ? "Hide more projects" : "Show more projects"}
+            aria-expanded={isEarlierExpanded}
+            aria-controls="earlier-experience"
           >
             <div className="more-card__inner">
-              <div className="more-card__title">More Projects</div>
+              <div className="more-card__title">Earlier Experience</div>
               <div className="more-card__desc">
-                {showMore ? "Hide extra projects" : `View ${moreProjects.length} more projects`}
+                {isEarlierExpanded
+                  ? "Hide earlier experience"
+                  : `View ${moreProjects.length} more — co-founding and remote nonprofit work`}
               </div>
-              <div className={`more-card__icon ${showMore ? "is-open" : ""}`}>▾</div>
+              <div className={`more-card__icon ${isEarlierExpanded ? "is-open" : ""}`}>▾</div>
             </div>
-          </div>
+          </button>
         )}
       </div>
 
-      {/* Expanded: up to 4 more projects, compact variant */}
-      {!isFiltering && showMore && moreProjects.length > 0 && (
-        <div className="grid more-grid">
+      {/*
+        Always rendered when unfiltered, collapsed with `hidden` rather than
+        unmounted, so these roles ship in the prerendered HTML for crawlers
+        while staying out of the accessibility tree until expanded.
+      */}
+      {!isFiltering && moreProjects.length > 0 && (
+        <div className="grid more-grid" id="earlier-experience" hidden={!isEarlierExpanded}>
           {moreProjects.map((project) => (
             <ProjectCard
               key={project.id}
@@ -242,6 +381,7 @@ export default function Projects() {
       {selectedProject && (
         <div className="modal-overlay" onMouseDown={closeProject}>
           <div
+            ref={modalRef}
             className="modal"
             role="dialog"
             aria-modal="true"
@@ -282,6 +422,12 @@ export default function Projects() {
               </div>
 
               <div className="modal-meta">
+                {selectedProject.period && (
+                  <div className="meta-item">
+                    <div className="meta-label">Period</div>
+                    <div className="meta-value">{selectedProject.period}</div>
+                  </div>
+                )}
                 {selectedProject.role && (
                   <div className="meta-item">
                     <div className="meta-label">Role</div>

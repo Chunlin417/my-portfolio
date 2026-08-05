@@ -1,30 +1,44 @@
 export default function About() {
   return (
     <section id="about" className="section section-about">
-      <h2 className="h2">About</h2>
+      <span className="section-kicker">02 — About</span>
+      <h2 className="h2">How I work</h2>
 
-      <div className="about-block">
-        <p className="about-intro">
-          I build frontend applications with a focus on clarity, structure, and long-term maintainability.
-          My experience includes enterprise systems, UI refactoring, and real-world production features.
-        </p>
+      <p className="about-intro">
+        I build products end to end — frontend, backend, and the database and auth layer in
+        between. My experience spans education platforms, AI SaaS, and IoT systems, as both an
+        individual contributor and a team lead.
+      </p>
 
-        <ul className="about-list">
-          <li>
-            <strong>Frontend Architecture:</strong> React components, UI state, and maintainable CSS
-          </li>
-          <li>
-            <strong>User Experience:</strong> Clear validation, feedback, and usability-driven interfaces
-          </li>
-          <li>
-            <strong>Production Work:</strong> Enterprise workflows, system constraints, and ongoing maintenance
-          </li>
-        </ul>
+      <div className="capabilities">
+        <div className="capability">
+          <span className="capability__index">01</span>
+          <h3 className="capability__title">Full-Stack Architecture</h3>
+          <p className="capability__desc">
+            Next.js and React frontends backed by real databases and RESTful APIs — not just UI.
+          </p>
+        </div>
 
-        <p className="about-goal">
-          Currently seeking frontend or software developer roles where I can contribute to real-world products.
-        </p>
+        <div className="capability">
+          <span className="capability__index">02</span>
+          <h3 className="capability__title">Secure by Design</h3>
+          <p className="capability__desc">
+            Authentication, role-based access, and Row Level Security that hold up in production.
+          </p>
+        </div>
+
+        <div className="capability">
+          <span className="capability__index">03</span>
+          <h3 className="capability__title">Shipping &amp; Leading</h3>
+          <p className="capability__desc">
+            From co-founding a live product to leading a team — comfortable owning a project end to end.
+          </p>
+        </div>
       </div>
+
+      <p className="about-goal">
+        Currently seeking full-stack or software developer roles where I can contribute to real-world products.
+      </p>
     </section>
   );
 }

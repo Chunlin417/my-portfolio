@@ -6,17 +6,18 @@ export default function Hero() {
       <div className="hero__inner">
         {/* Left */}
         <div className="hero__content">
-          <div className="pill">Frontend Developer · React</div>
+          <div className="pill">Full-Stack Developer — Next.js &amp; Supabase</div>
 
           <h1 className="hero__title">Hi, I&rsquo;m Chunlin He.</h1>
 
           <p className="hero__subtitle">
-            Building production-ready frontend interfaces
+            I build full-stack products end to end — Next.js interfaces backed
+            by real databases, auth, and APIs that hold up in production.
           </p>
 
           <div className="hero__actions">
             <a className="btn btn--primary" href="#projects">
-              View Projects
+              View Experience
             </a>
             <a className="btn btn--ghost" href="#contact">
               Contact
@@ -30,8 +31,8 @@ export default function Hero() {
             src="/images/hero.jpg"
             alt="Chunlin He"
             className="hero__image"
-            width={340}
-            height={425}
+            width={320}
+            height={400}
             priority
           />
         </div>

@@ -38,6 +38,7 @@ export default function ProjectCard({
           <h3 className={`card__title ${isCompact ? "card__title--sm" : ""}`}>
             {project.title}
           </h3>
+          {project.period && <p className="card__period">{project.period}</p>}
           <p className={`text ${isCompact ? "text--sm" : ""}`}>
             {project.description}
           </p>

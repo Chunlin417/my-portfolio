@@ -1,30 +1,44 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { NAV_LINKS, THEME_STORAGE_KEY } from "@/lib/constants";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { NAV_LINKS } from "@/lib/constants";
+import {
+  getServerThemeSnapshot,
+  getTheme,
+  subscribeToTheme,
+  toggleTheme,
+} from "@/lib/theme";
 
-type Theme = "light" | "dark";
+const subscribeToNothing = () => () => {};
+const getShortcutKey = () =>
+  /mac|iphone|ipad/i.test(navigator.userAgent) ? "⌘K" : "Ctrl K";
 
 export default function Navbar() {
   const [activeSection, setActiveSection] = useState<string>("home");
-  const [theme, setTheme] = useState<Theme>("light");
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // The inline anti-flash script in app/layout.tsx already applied the
-  // correct theme to <html> before hydration. Read it back into state here
-  // (instead of re-deriving from localStorage) so the toggle button's icon
-  // matches without ever writing to the DOM on mount.
-  useEffect(() => {
-    const attr = document.documentElement.getAttribute("data-theme");
-    setTheme(attr === "dark" ? "dark" : "light");
-  }, []);
+  // The inline anti-flash script in app/layout.tsx applies the theme to <html>
+  // before hydration, and the ⌘K palette can flip it too — so the button reads
+  // the attribute as an external store instead of holding its own copy.
+  const theme = useSyncExternalStore(
+    subscribeToTheme,
+    getTheme,
+    getServerThemeSnapshot
+  );
 
-  function toggleTheme() {
-    setTheme((prev) => {
-      const next: Theme = prev === "dark" ? "light" : "dark";
-      document.documentElement.setAttribute("data-theme", next);
-      window.localStorage.setItem(THEME_STORAGE_KEY, next);
-      return next;
+  // Platform is only knowable on the client; the server snapshot keeps
+  // hydration consistent and React swaps in the real value immediately after.
+  const shortcutKey = useSyncExternalStore(
+    subscribeToNothing,
+    getShortcutKey,
+    () => "⌘K"
+  );
+
+  function handleThemeToggle(event: React.MouseEvent<HTMLButtonElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    toggleTheme({
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
     });
   }
 
@@ -99,8 +113,17 @@ export default function Navbar() {
           </nav>
 
           <button
+            className="kbd-hint"
+            onClick={() => window.dispatchEvent(new CustomEvent("palette:open"))}
+            aria-label="Open command palette"
+            title="Command palette"
+          >
+            <span aria-hidden="true">{shortcutKey}</span>
+          </button>
+
+          <button
             className="theme-btn"
-            onClick={toggleTheme}
+            onClick={handleThemeToggle}
             aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             title={theme === "dark" ? "Light mode" : "Dark mode"}
           >
