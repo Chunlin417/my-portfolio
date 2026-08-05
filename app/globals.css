@@ -30,12 +30,23 @@
  * play, so they stay correct even if Preflight is ever re-enabled later.
  */
 
+/*
+ * Light is the base palette rather than a `[data-theme="light"]` block on
+ * purpose. The theme is applied by the inline script in app/layout.tsx, which
+ * writes data-theme onto <html>; if that never runs (JS disabled, script
+ * error, a crawler that renders CSS but not JS) no [data-theme] selector
+ * matches, and scoping the colours to one would leave every variable
+ * undefined — an unstyled page. Defining them here means the worst case is a
+ * complete light-theme site, and dark simply overrides below.
+ *
+ * `color-scheme` additionally tells the browser to render native UI
+ * (scrollbars, form controls, autofill) to match.
+ */
 :root {
   --max: 1120px;
-}
 
-/* default: light */
-:root[data-theme="light"] {
+  color-scheme: light;
+
   --bg: #ffffff;
   --panel: rgba(0, 0, 0, 0.03);
   --text: rgba(0, 0, 0, 0.92);
@@ -52,6 +63,8 @@
 
 /* dark */
 :root[data-theme="dark"] {
+  color-scheme: dark;
+
   --bg: #0b0d12;
   --panel: rgba(255, 255, 255, 0.06);
   --text: rgba(255, 255, 255, 0.92);
